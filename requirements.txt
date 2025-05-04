@@ -25,3 +25,22 @@ onnxruntime
 onnx
 onnx2pytorch
 ml_collections
+
+# API 依赖
+fastapi>=0.68.0
+uvicorn>=0.15.0
+python-multipart>=0.0.5
+pydantic>=1.8.2
+
+# 音频处理依赖
+torch>=2.0.0
+numpy>=1.20.0
+scipy>=1.7.0
+librosa>=0.8.1
+soundfile>=0.10.3
+onnxruntime>=1.8.0
+
+# 实用工具
+tqdm>=4.62.0
+requests>=2.26.0
+shutil-which>=3.5.2

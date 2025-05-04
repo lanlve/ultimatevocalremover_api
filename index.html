@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Vocal Remover API 测试</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        select, input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 4px;
+            background-color: #f1f1f1;
+            display: none;
+        }
+        .result h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .result-link {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #e8f4fc;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #3498db;
+        }
+        .result-link:hover {
+            background-color: #d6eaf8;
+        }
+        progress {
+            width: 100%;
+            height: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        .error-message {
+            color: #e74c3c;
+            margin-top: 20px;
+            display: none;
+            padding: 10px;
+            background-color: #fadbd8;
+            border-radius: 4px;
+        }
+        .audio-player {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .cleanup-button {
+            background-color: #e74c3c;
+            margin-top: 10px;
+        }
+        .cleanup-button:hover {
+            background-color: #c0392b;
+        }
+        .model-info {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ultimate Vocal Remover API 测试</h1>
+    <div class="container">
+        <form id="separationForm">
+            <div class="form-group">
+                <label for="modelSelect">选择模型：</label>
+                <select id="modelSelect" required>
+                    <option value="" disabled selected>加载模型中...</option>
+                </select>
+                <div class="model-info">
+                    <p>Kim_Vocal_2 (MDX): 适合分离高品质人声和伴奏</p>
+                    <p>6_HP-Karaoke-UVR (VR): 适合分离卡拉OK音频</p>
+                    <p>Reverb_HQ_By_FoxJoy (MDX): 适合分离人声和混响效果</p>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="audioFile">上传音频文件：</label>
+                <input type="file" id="audioFile" accept=".mp3, .wav, .flac, .m4a, .ogg" required>
+            </div>
+            <button type="submit" id="submitButton">开始分离</button>
+            <button type="button" id="clearCacheButton" style="background-color: #f39c12; margin-top: 10px;">清除模型缓存</button>
+        </form>
+        
+        <progress id="progressBar" max="100" value="0"></progress>
+        
+        <div id="errorMessage" class="error-message"></div>
+        
+        <div id="result" class="result">
+            <h2>处理结果</h2>
+            <div id="resultLinks"></div>
+            <div id="audioPlayers"></div>
+            <button id="cleanupButton" class="cleanup-button">清理临时文件</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取元素
+            const form = document.getElementById('separationForm');
+            const modelSelect = document.getElementById('modelSelect');
+            const audioFile = document.getElementById('audioFile');
+            const submitButton = document.getElementById('submitButton');
+            const progressBar = document.getElementById('progressBar');
+            const result = document.getElementById('result');
+            const resultLinks = document.getElementById('resultLinks');
+            const audioPlayers = document.getElementById('audioPlayers');
+            const errorMessage = document.getElementById('errorMessage');
+            const cleanupButton = document.getElementById('cleanupButton');
+            const clearCacheButton = document.getElementById('clearCacheButton');
+            
+            let tempDir = null;
+            
+            // 加载模型列表
+            fetch('/models')
+                .then(response => response.json())
+                .then(data => {
+                    modelSelect.innerHTML = '';
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        modelSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('获取模型列表失败:', error);
+                    modelSelect.innerHTML = '<option value="" disabled selected>加载模型失败</option>';
+                });
+            
+            // 处理表单提交
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 验证表单
+                if (!modelSelect.value) {
+                    showError('请选择模型');
+                    return;
+                }
+                if (!audioFile.files[0]) {
+                    showError('请选择音频文件');
+                    return;
+                }
+                
+                // 重置界面
+                result.style.display = 'none';
+                resultLinks.innerHTML = '';
+                audioPlayers.innerHTML = '';
+                hideError();
+                
+                // 显示进度条
+                progressBar.style.display = 'block';
+                submitButton.disabled = true;
+                
+                // 创建表单数据
+                const formData = new FormData();
+                formData.append('file', audioFile.files[0]);
+                formData.append('model', modelSelect.value);
+                
+                // 发送请求
+                fetch('/separate', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.detail || '处理音频失败');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 隐藏进度条
+                    progressBar.style.display = 'none';
+                    submitButton.disabled = false;
+                    
+                    // 显示结果
+                    result.style.display = 'block';
+                    tempDir = data.temp_dir;
+                    
+                    // 添加下载链接和音频播放器
+                    if (data.files) {
+                        for (const [type, url] of Object.entries(data.files)) {
+                            // 创建下载链接
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.className = 'result-link';
+                            link.textContent = `下载${type === 'vocals' ? '人声' : '伴奏'}文件`;
+                            link.download = '';
+                            resultLinks.appendChild(link);
+                            
+                            // 创建音频播放器
+                            const audioTitle = document.createElement('p');
+                            audioTitle.textContent = type === 'vocals' ? '人声预览:' : '伴奏预览:';
+                            
+                            const audio = document.createElement('audio');
+                            audio.controls = true;
+                            audio.className = 'audio-player';
+                            audio.src = url;
+                            
+                            audioPlayers.appendChild(audioTitle);
+                            audioPlayers.appendChild(audio);
+                        }
+                    } else {
+                        resultLinks.innerHTML = '<p>处理完成，但没有生成文件</p>';
+                    }
+                })
+                .catch(error => {
+                    progressBar.style.display = 'none';
+                    submitButton.disabled = false;
+                    showError(error.message);
+                });
+            });
+            
+            // 清理临时文件
+            cleanupButton.addEventListener('click', function() {
+                if (tempDir) {
+                    fetch(`/cleanup?dir_path=${encodeURIComponent(tempDir)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            result.style.display = 'none';
+                            tempDir = null;
+                        })
+                        .catch(error => {
+                            showError('清理临时文件失败');
+                        });
+                }
+            });
+            
+            // 清除模型缓存
+            clearCacheButton.addEventListener('click', function() {
+                fetch('/clear_cache')
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                    })
+                    .catch(error => {
+                        showError('清除模型缓存失败');
+                    });
+            });
+            
+            // 显示错误信息
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+            }
+            
+            // 隐藏错误信息
+            function hideError() {
+                errorMessage.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -3,116 +3,116 @@
 <a href="https://www.buymeacoffee.com/mohannadbarakat" target="_blank"><img src="https://img.shields.io/badge/-buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee" alt="Buy Me A Coffee"></a>
 <a href="https://colab.research.google.com/drive/1qf17AV5KU_8v0f29zUnPHQBbr3iX8bu6?usp=sharing" target="_blank"><img src="https://img.shields.io/badge/colab-notebook-yellow" alt="Buy Me A Coffee"></a>
 
-# Ultimate Vocal Remover API v0.1
+# Ultimate Vocal Remover API
 
-This is a an API for ultimate vocal removing. It is designed to be expandable with new models/algorethems while maintaining a simple interface. 
-[Colab demo](https://colab.research.google.com/drive/1qf17AV5KU_8v0f29zUnPHQBbr3iX8bu6?usp=sharing)
+这是一个用于从音频文件中分离人声和伴奏的API服务，基于Ultimate Vocal Remover (UVR)项目。
 
+## 功能
 
-# Install
-If you intend to edit the code
+- 支持多种模型进行音频分离
+- 提供简单的HTTP API接口
+- 支持上传音频文件并下载分离结果
+- 内置简单的Web界面用于测试
+
+## 支持的模型
+
+当前支持以下几种模型：
+
+1. **Kim_Vocal_2** - MDX类型，用于人声/伴奏分离
+2. **Reverb_HQ_By_FoxJoy** - MDX类型，用于混响处理
+3. **6_HP-Karaoke-UVR** - VR-Network类型，用于卡拉OK效果
+
+## 安装与运行
+
+### 前提条件
+
+- Python 3.7+
+- PyTorch
+- CUDA (如需GPU支持)
+
+### 安装依赖
+
 ```bash
-git clone https://github.com/NextAudioGen/ultimatevocalremover_api.git
-cd ultimatevocalremover_api
-pip install .
-```
-# Usage
-```python
-import uvr
-from uvr import models
-from uvr.utils.get_models import download_all_models
-import torch
-import audiofile
-import json
-
-models_json = json.load(open("/content/ultimatevocalremover_api/src/models_dir/models.json", "r"))
-download_all_models(models_json)
-name = {name_of_your_audio}
-device = "cuda"
-    
-demucs = models.Demucs(name="hdemucs_mmi", other_metadata={"segment":2, "split":True}, device=device, logger=None)
-
-# Separating an audio file
-res = demucs(name)
-seperted_audio = res["separated"]
-vocals = seperted_audio["vocals"]
-base = seperted_audio["bass"]
-drums = seperted_audio["drums"]
-other = seperted_audio["other"]
-```
-# Archetecture:
-```text
-Ultimate Vocal Remover API
-├── src
-│   ├── audiotools.py 
-│   ├── models.py 
-│   ├── ensembles.py
-│   ├── pipelines.py
-│   ├── utils/
-│   ├── audio_tools/
-│   └── models_dir
-│       ├── Each implementation of a model is added here as a single directory.
-│       └── models.json (this is used to download the models)
-├── docs
-│   ├── models/
-│   │   └── Here goes all models docs each in a single directory.
-│   ├── ensembles/
-│   │   └── Here goes all ensembles docs each in a single directory.
-│   ├── pipelines/
-│   │   └── Here goes all pipelines docs each in a single directory.
-│   ├── audio_tools/
-│   └── utils/
-└── tests/
-    ├── test_models.py
-    ├── test_ensembles.py
-    ├── test_pipelines.py
-    ├── test_audiotools.py
-    └── utils/
-```
-**audiotools.py:** Interface for all audio tools \
-**models.py:** Interface for all models following a consistent interface \
-**utils/** Here goes read and write utils for audio, models...etc. \
-
-## All models, pipelines and ensembles follow this interface:
-```python
-class BaseModel:
-    def __init__(self, name:str, architecture:str, other_metadata:dict, device=None, logger=None)
-    def __call__(self, audio:Union[npt.NDArray, str], sampling_rate:int=None, **kwargs)->dict
-    # @singledispatch
-    def predict(self, audio:npt.NDArray, sampling_rate:int, **kwargs)->dict
-    def predict_path(self, audio:str, **kwargs)->dict
-    def separate(self, audio:npt.NDArray, sampling_rate:int=None)->dict
-    def __repr__(self)
-    def to(self, device:str)
-    def update_metadata(self, metadata:dict)
-    @staticmethod
-    def list_models()->list
-
+pip install -r requirements.txt
 ```
 
-# Contribution
-If you like this, leave a star, fork it, and definitely you are welcomed to [buy me a coffee](https://www.buymeacoffee.com/mohannadbarakat).
+### 运行服务
 
-Also, please open issues, make pull requests but remember to follow the structure and interfaces. Moreover, we are trying to build automated testing, we are aware that the current tests are so naive but we are working on it. So please make sure to add some tests to your new code as well.
+```bash
+python api.py --host 0.0.0.0 --port 6006 --device cpu
+```
 
-# Refrences
-## code
-Code and weights from these sources used in developing this library:
-- [MDX-Net](https://github.com/kuielab/mdx-net/tree/main) This is the original MDX architecture implementation. 
-- [MDXC and demucs](https://github.com/ZFTurbo/MVSEP-MDX23-music-separation-model/tree/main) This repo has a clever ensumbling methods for MDX, Demucs 3, and Demucs 4. Moreover they have the wieghts for their finetuned MDX open (available under MDXC implementation [here](/src/models_dir/mdxc/)).
-- [Demucs](https://github.com/facebookresearch/demucs/tree/e976d93ecc3865e5757426930257e200846a520a) This is the original implementation of the model.
-- [ultimatevocalremovergui](https://github.com/Anjok07/ultimatevocalremovergui/tree/master) This is one of the best vocal removers. A lot of ideas in this repo were borrowed from here.
-- [weights](https://github.com/TRvlvr/model_repo/releases/tag/all_public_uvr_models) Most of the models right now are comming from this repo.
+参数说明：
+- `--host`: 指定主机地址（默认为0.0.0.0）
+- `--port`: 指定端口号（默认为6006）
+- `--device`: 指定计算设备，可选值为cpu、cuda或mps（默认为cpu）
 
-## Papers
-- [Benchmarks and leaderboards for sound demixing
-tasks](https://arxiv.org/pdf/2305.07489.pdf)
-- [MULTI-SCALE MULTI-BAND DENSENETS FOR AUDIO SOURCE SEPARATION](https://arxiv.org/pdf/1706.09588.pdf)
-- [HYBRID TRANSFORMERS FOR MUSIC SOURCE SEPARATION](https://arxiv.org/pdf/2211.08553.pdf)
-- [KUIELab-MDX-Net: A Two-Stream Neural Network for Music Demixing](https://arxiv.org/abs/2111.12203)
+## API使用
 
-# Core Developers
+### 获取可用模型列表
 
-- [Mohannad Barakat](https://github.com/mohannadEhabBarakat/)
-- [Noha Magdy](https://github.com/Noha-Magdy)
-- [Mohtady Ehab](https://github.com/Mohtady-Ehab)
+```
+GET /models
+```
+
+### 分离音频
+
+```
+POST /separate
+```
+
+参数：
+- `file`: 音频文件
+- `model`: 使用的模型名称
+
+### 下载结果
+
+```
+GET /download?path={file_path}
+```
+
+### 清除缓存
+
+```
+GET /clear_cache
+```
+
+### 清理临时文件
+
+```
+GET /cleanup?dir_path={temp_dir}
+```
+
+## 最近更新
+
+### 2023年X月X日
+
+- 重构模型加载逻辑，修复6_HP-Karaoke-UVR模型加载失败的问题
+- 改进文件路径处理，支持绝对路径和相对路径
+- 增强错误处理和日志记录
+- 修复模型数据读取问题
+- 添加模型参数文件自动查找功能
+- 改进输出文件检测逻辑
+
+## 目录结构
+
+```
+├── api.py                  # 主API服务
+├── index.html              # 简单的Web界面
+├── temp/                   # 临时文件存储
+├── src/                    # 源代码
+│   └── models_dir/         # 模型目录
+│       ├── mdx/            # MDX模型
+│       │   └── weights/    # 模型权重文件
+│       └── vr_network/     # VR-Network模型
+│           └── weights/    # 模型权重文件
+└── requirements.txt        # 依赖包列表
+```
+
+## 开发说明
+
+若要添加新模型，需要：
+
+1. 在`MODEL_PATHS`中添加模型路径
+2. 在`MODEL_CONFIGS`中添加模型配置
+3. 确保模型文件放置在正确的位置
