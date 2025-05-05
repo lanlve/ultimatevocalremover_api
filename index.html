@@ -3,213 +3,938 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Vocal Remover API 测试</title>
+    <title>Ultimate Vocal Remover API</title>
     <style>
         body {
             font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
             line-height: 1.6;
             color: #333;
-            background-color: #f9f9f9;
+            background-color: #f8f9fa;
         }
         h1 {
             text-align: center;
-            color: #2c3e50;
+            color: #1e3a8a;
             margin-bottom: 30px;
+            font-weight: 600;
         }
         .container {
             background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
         }
+        
+        /* Tab导航组件样式 */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 30px;
+        }
+        .tab-item {
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s ease;
+            color: #64748b;
+        }
+        .tab-item:hover {
+            color: #3b82f6;
+        }
+        .tab-item.active {
+            color: #1e3a8a;
+            border-bottom-color: #3b82f6;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .form-group h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #1e3a8a;
+            font-weight: 600;
+            font-size: 1.2rem;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
         }
         label {
             display: block;
             margin-bottom: 8px;
-            font-weight: bold;
+            font-weight: 500;
         }
-        select, input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+        .radio-group {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .radio-option:hover {
+            background-color: #e9ecef;
+        }
+        .radio-option input {
+            margin-right: 8px;
+        }
+        .drop-area {
+            border: 2px dashed #3b82f6;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .drop-area:hover, .drop-area.active {
+            background-color: #ebf5ff;
+        }
+        .drop-area p {
+            margin: 0;
+            font-size: 16px;
+            color: #64748b;
+        }
+        .drop-area strong {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+        .file-item:hover {
+            transform: translateX(5px);
+        }
+        .file-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 400px;
+            font-weight: 500;
+        }
+        .file-remove {
+            color: #ef4444;
+            cursor: pointer;
+            padding: 5px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            transition: transform 0.2s ease;
+        }
+        .file-remove:hover {
+            transform: scale(1.2);
+        }
+        .slider-container {
+            margin-top: 15px;
+            margin-bottom: 25px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .slider-wrapper label {
+            width: 150px;
+            margin-bottom: 0;
+            color: #4b5563;
+        }
+        .slider-wrapper input[type="range"] {
+            flex-grow: 1;
+            height: 5px;
+            border-radius: 5px;
+            background: #e5e7eb;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider-wrapper input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .slider-wrapper input[type="range"]::-webkit-slider-thumb:hover {
+            background: #2563eb;
+        }
+        .slider-wrapper .value {
+            width: 50px;
+            text-align: center;
+            font-weight: 600;
+            color: #1e3a8a;
+            background: #e9ecef;
+            padding: 3px 5px;
+            border-radius: 5px;
+        }
+        .slider-description {
+            margin-top: 8px;
+            font-size: 0.85em;
+            color: #64748b;
+            padding-left: 165px;
+            line-height: 1.4;
         }
         button {
-            background-color: #3498db;
+            background-color: #3b82f6;
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 4px;
+            padding: 14px 20px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
             width: 100%;
+            font-weight: 600;
+            transition: all 0.2s ease;
         }
         button:hover {
-            background-color: #2980b9;
+            background-color: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        button:active {
+            transform: translateY(0);
         }
         button:disabled {
-            background-color: #95a5a6;
+            background-color: #94a3b8;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
-        .result {
-            margin-top: 30px;
-            padding: 20px;
-            border-radius: 4px;
-            background-color: #f1f1f1;
-            display: none;
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
         }
-        .result h2 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        .result-link {
-            display: block;
-            margin: 10px 0;
-            padding: 10px;
-            background-color: #e8f4fc;
-            border-radius: 4px;
-            text-decoration: none;
-            color: #3498db;
-        }
-        .result-link:hover {
-            background-color: #d6eaf8;
-        }
-        progress {
-            width: 100%;
-            height: 20px;
-            margin-top: 20px;
-            display: none;
-        }
-        .error-message {
-            color: #e74c3c;
-            margin-top: 20px;
-            display: none;
-            padding: 10px;
-            background-color: #fadbd8;
-            border-radius: 4px;
-        }
-        .audio-player {
-            width: 100%;
-            margin-top: 10px;
+        .button-group button {
+            flex: 1;
         }
         .cleanup-button {
-            background-color: #e74c3c;
-            margin-top: 10px;
+            background-color: #ef4444;
         }
         .cleanup-button:hover {
-            background-color: #c0392b;
+            background-color: #dc2626;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
         }
-        .model-info {
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #7f8c8d;
+        .progress-container {
+            margin-top: 30px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background-color: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .progress-bar .progress {
+            height: 100%;
+            background-color: #3b82f6;
+            background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+            background-size: 1rem 1rem;
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: progress-animation 1s linear infinite;
+        }
+        @keyframes progress-animation {
+            0% { background-position: 0 0; }
+            100% { background-position: 1rem 0; }
+        }
+        .progress-text {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .result-container {
+            margin-top: 35px;
+            display: none;
+            animation: fade-in 0.5s ease;
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .result-header h3 {
+            margin: 0;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+        .download-all-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .download-all-buttons button {
+            padding: 10px 15px;
+            font-size: 14px;
+            width: auto;
+        }
+        .single-result {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+        .single-result:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+        }
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1e3a8a;
+            font-size: 1.1rem;
+        }
+        .audio-preview {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+        .audio-preview label {
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 0;
+        }
+        .audio-player {
+            flex-grow: 1;
+            height: 40px;
+            border-radius: 20px;
+        }
+        .download-button {
+            background-color: #10b981;
+            padding: 10px 15px;
+            font-size: 14px;
+            width: auto;
+        }
+        .download-button:hover {
+            background-color: #059669;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+        .error-message {
+            color: #ef4444;
+            margin-top: 25px;
+            display: none;
+            padding: 15px;
+            background-color: #fee2e2;
+            border-radius: 8px;
+            font-weight: 500;
+            border-left: 4px solid #ef4444;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <h1>Ultimate Vocal Remover API 测试</h1>
+    <h1>Ultimate Vocal Remover API</h1>
     <div class="container">
-        <form id="separationForm">
+        <!-- Tab导航 -->
+        <div class="tabs">
+            <div class="tab-item" data-tab="oneclick">一键分离</div>
+            <div class="tab-item" data-tab="standard">音频分离</div>
+        </div>
+        
+        <!-- 一键分离Tab内容 -->
+        <div id="oneclick-tab" class="tab-content">
             <div class="form-group">
-                <label for="modelSelect">选择模型：</label>
-                <select id="modelSelect" required>
-                    <option value="" disabled selected>加载模型中...</option>
-                </select>
-                <div class="model-info">
-                    <p>Kim_Vocal_2 (MDX): 适合分离高品质人声和伴奏</p>
-                    <p>6_HP-Karaoke-UVR (VR): 适合分离卡拉OK音频</p>
-                    <p>Reverb_HQ_By_FoxJoy (MDX): 适合分离人声和混响效果</p>
+                <h3>添加音频文件</h3>
+                <div class="drop-area" id="oneclickDropArea">
+                    <p>拖放音频文件到这里，或者 <strong>点击选择文件</strong></p>
+                </div>
+                <input type="file" id="oneclickFileInput" accept=".mp3, .wav, .flac, .m4a, .ogg" style="display: none;" multiple>
+                <div class="file-list" id="oneclickFileList"></div>
+            </div>
+            
+            <div class="form-group">
+                <h3>模型参数</h3>
+                <div class="slider-container">
+                    <!-- MDX模型参数 -->
+                    <div class="slider-wrapper">
+                        <label for="oneclickBatchSizeSlider">批处理大小:</label>
+                        <input type="range" id="oneclickBatchSizeSlider" min="1" max="16" value="8" step="1">
+                        <div class="value" id="oneclickBatchSizeValue">8</div>
+                    </div>
+                    
+                    <div class="slider-wrapper">
+                        <label for="oneclickChunksSlider">分块大小:</label>
+                        <input type="range" id="oneclickChunksSlider" min="5" max="30" value="15" step="1">
+                        <div class="value" id="oneclickChunksValue">15</div>
+                    </div>
+                    
+                    <!-- VR模型参数 -->
+                    <div class="slider-wrapper">
+                        <label for="oneclickAggressivenessSlider">分离强度:</label>
+                        <input type="range" id="oneclickAggressivenessSlider" min="0" max="0.1" value="0.05" step="0.01">
+                        <div class="value" id="oneclickAggressivenessValue">0.05</div>
+                    </div>
                 </div>
             </div>
-            <div class="form-group">
-                <label for="audioFile">上传音频文件：</label>
-                <input type="file" id="audioFile" accept=".mp3, .wav, .flac, .m4a, .ogg" required>
+            
+            <div class="button-group">
+                <button id="oneclickSeparateButton" disabled>开始分离</button>
+                <button id="oneclickCleanTempButton" class="cleanup-button">清理临时文件</button>
             </div>
-            <button type="submit" id="submitButton">开始分离</button>
-            <button type="button" id="clearCacheButton" style="background-color: #f39c12; margin-top: 10px;">清除模型缓存</button>
-        </form>
+            
+            <div class="progress-container" id="oneclickProgressContainer">
+                <div class="progress-bar">
+                    <div class="progress" id="oneclickProgressBar"></div>
+                </div>
+                <div class="progress-text" id="oneclickProgressText">正在处理...</div>
+            </div>
+            
+            <div class="error-message" id="oneclickErrorMessage"></div>
+            
+            <div class="result-container" id="oneclickSingleResult">
+                <div class="result-header">
+                    <h3>处理结果</h3>
+                </div>
+                <div class="single-result">
+                    <div class="result-title" id="oneclickSingleTitle"></div>
+                    <div class="audio-preview" id="oneclickVocalsPreview">
+                        <label>人声:</label>
+                        <audio class="audio-player" controls></audio>
+                        <button class="download-button" data-type="vocals">下载人声</button>
+                    </div>
+                    <div class="audio-preview" id="oneclickInstrumentalPreview">
+                        <label>伴奏:</label>
+                        <audio class="audio-player" controls></audio>
+                        <button class="download-button" data-type="instrumental">下载伴奏</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-container" id="oneclickMultipleResult">
+                <div class="result-header">
+                    <h3>批量处理结果</h3>
+                    <div class="download-all-buttons">
+                        <button id="oneclickDownloadAllVocals">下载所有人声</button>
+                        <button id="oneclickDownloadAllInstrumentals">下载所有伴奏</button>
+                    </div>
+                </div>
+                <div id="oneclickResultsList"></div>
+            </div>
+        </div>
         
-        <progress id="progressBar" max="100" value="0"></progress>
-        
-        <div id="errorMessage" class="error-message"></div>
-        
-        <div id="result" class="result">
-            <h2>处理结果</h2>
-            <div id="resultLinks"></div>
-            <div id="audioPlayers"></div>
-            <button id="cleanupButton" class="cleanup-button">清理临时文件</button>
+        <!-- 标准音频分离Tab内容 -->
+        <div id="standard-tab" class="tab-content">
+            <div class="form-group">
+                <h3>添加音频文件</h3>
+                <div class="drop-area" id="dropArea">
+                    <p>拖放音频文件到这里，或者 <strong>点击选择文件</strong></p>
+                </div>
+                <input type="file" id="fileInput" accept=".mp3, .wav, .flac, .m4a, .ogg" style="display: none;" multiple>
+                <div class="file-list" id="fileList"></div>
+            </div>
+            <div class="form-group">
+                <h3>选择分离模型</h3>
+                <div class="radio-group" id="modelOptions">
+                    <div class="radio-option">
+                        <input type="radio" id="model1" name="model" value="Kim_Vocal_2" checked>
+                        <label for="model1">Kim_Vocal_2</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="model2" name="model" value="6_HP-Karaoke-UVR">
+                        <label for="model2">6_HP-Karaoke-UVR</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="model3" name="model" value="Reverb_HQ_By_FoxJoy">
+                        <label for="model3">Reverb_HQ_By_FoxJoy</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group hidden" id="mdxParams">
+                <h3>MDX模型参数</h3>
+                <div class="slider-container">
+                    <div class="slider-wrapper">
+                        <label for="batchSizeSlider">批处理大小:</label>
+                        <input type="range" id="batchSizeSlider" min="1" max="16" value="8" step="1">
+                        <div class="value" id="batchSizeValue">8</div>
+                    </div>
+                    <div class="slider-description">
+                        调整批处理大小可以提高处理速度，但会占用更多内存。建议M系列Mac使用8-16，其他设备使用4-8。
+                    </div>
+                    
+                    <div class="slider-wrapper">
+                        <label for="chunksSlider">分块大小:</label>
+                        <input type="range" id="chunksSlider" min="5" max="30" value="15" step="1">
+                        <div class="value" id="chunksValue">15</div>
+                    </div>
+                    <div class="slider-description">
+                        调整每次处理的音频长度（秒）。值越大处理速度越快，但需要更多内存。建议M系列Mac使用15-25。
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group hidden" id="vrParams">
+                <h3>VR模型参数</h3>
+                <div class="slider-container">
+                    <div class="slider-wrapper">
+                        <label for="aggressivenessSlider">分离强度:</label>
+                        <input type="range" id="aggressivenessSlider" min="0" max="0.1" value="0.05" step="0.01">
+                        <div class="value" id="aggressivenessValue">0.05</div>
+                    </div>
+                    <div class="slider-description">
+                        调整分离强度，值越高分离效果越明显，但可能引入更多伪影。建议范围0.01-0.1，默认0.05。
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="separateButton" disabled>开始分离</button>
+                <button id="cleanTempButton" class="cleanup-button">清理临时文件</button>
+            </div>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress" id="progressBar"></div>
+                </div>
+                <div class="progress-text" id="progressText">正在处理...</div>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+
+            <div class="result-container" id="singleResult">
+                <div class="result-header">
+                    <h3>处理结果</h3>
+                </div>
+                <div class="single-result">
+                    <div class="result-title" id="singleTitle"></div>
+                    <div class="audio-preview" id="vocalsPreview">
+                        <label>人声:</label>
+                        <audio class="audio-player" controls></audio>
+                        <button class="download-button" data-type="vocals">下载人声</button>
+                    </div>
+                    <div class="audio-preview" id="instrumentalPreview">
+                        <label>伴奏:</label>
+                        <audio class="audio-player" controls></audio>
+                        <button class="download-button" data-type="instrumental">下载伴奏</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-container" id="multipleResult">
+                <div class="result-header">
+                    <h3>批量处理结果</h3>
+                    <div class="download-all-buttons">
+                        <button id="downloadAllVocals">下载所有人声</button>
+                        <button id="downloadAllInstrumentals">下载所有伴奏</button>
+                    </div>
+                </div>
+                <div id="resultsList"></div>
+            </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 获取元素
-            const form = document.getElementById('separationForm');
-            const modelSelect = document.getElementById('modelSelect');
-            const audioFile = document.getElementById('audioFile');
-            const submitButton = document.getElementById('submitButton');
-            const progressBar = document.getElementById('progressBar');
-            const result = document.getElementById('result');
-            const resultLinks = document.getElementById('resultLinks');
-            const audioPlayers = document.getElementById('audioPlayers');
-            const errorMessage = document.getElementById('errorMessage');
-            const cleanupButton = document.getElementById('cleanupButton');
-            const clearCacheButton = document.getElementById('clearCacheButton');
+            // Tab切换功能
+            const tabItems = document.querySelectorAll('.tab-item');
+            const tabContents = document.querySelectorAll('.tab-content');
             
-            let tempDir = null;
+            // 设置初始状态 - 默认显示一键分离Tab
+            document.querySelector('.tab-item[data-tab="oneclick"]').classList.add('active');
+            document.getElementById('oneclick-tab').classList.add('active');
             
-            // 加载模型列表
-            fetch('/models')
-                .then(response => response.json())
-                .then(data => {
-                    modelSelect.innerHTML = '';
-                    data.models.forEach(model => {
-                        const option = document.createElement('option');
-                        option.value = model;
-                        option.textContent = model;
-                        modelSelect.appendChild(option);
-                    });
-                })
-                .catch(error => {
-                    console.error('获取模型列表失败:', error);
-                    modelSelect.innerHTML = '<option value="" disabled selected>加载模型失败</option>';
+            // Tab点击事件
+            tabItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // 移除所有active状态
+                    tabItems.forEach(tab => tab.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // 设置当前Tab为active
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
                 });
+            });
             
-            // 处理表单提交
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
+            // 标准分离模式DOM元素
+            const modelRadios = document.querySelectorAll('input[name="model"]');
+            const mdxParams = document.getElementById('mdxParams');
+            const vrParams = document.getElementById('vrParams');
+            const dropArea = document.getElementById('dropArea');
+            const fileInput = document.getElementById('fileInput');
+            const fileList = document.getElementById('fileList');
+            const separateButton = document.getElementById('separateButton');
+            const cleanTempButton = document.getElementById('cleanTempButton');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const errorMessage = document.getElementById('errorMessage');
+            const singleResult = document.getElementById('singleResult');
+            const multipleResult = document.getElementById('multipleResult');
+            const resultsList = document.getElementById('resultsList');
+            const singleTitle = document.getElementById('singleTitle');
+            const vocalsPreview = document.getElementById('vocalsPreview');
+            const instrumentalPreview = document.getElementById('instrumentalPreview');
+            
+            // 标准分离模式滑杆元素
+            const batchSizeSlider = document.getElementById('batchSizeSlider');
+            const batchSizeValue = document.getElementById('batchSizeValue');
+            const chunksSlider = document.getElementById('chunksSlider');
+            const chunksValue = document.getElementById('chunksValue');
+            const aggressivenessSlider = document.getElementById('aggressivenessSlider');
+            const aggressivenessValue = document.getElementById('aggressivenessValue');
+            
+            // 一键分离模式DOM元素
+            const oneclickDropArea = document.getElementById('oneclickDropArea');
+            const oneclickFileInput = document.getElementById('oneclickFileInput');
+            const oneclickFileList = document.getElementById('oneclickFileList');
+            const oneclickSeparateButton = document.getElementById('oneclickSeparateButton');
+            const oneclickCleanTempButton = document.getElementById('oneclickCleanTempButton');
+            const oneclickProgressContainer = document.getElementById('oneclickProgressContainer');
+            const oneclickProgressBar = document.getElementById('oneclickProgressBar');
+            const oneclickProgressText = document.getElementById('oneclickProgressText');
+            const oneclickErrorMessage = document.getElementById('oneclickErrorMessage');
+            const oneclickSingleResult = document.getElementById('oneclickSingleResult');
+            const oneclickMultipleResult = document.getElementById('oneclickMultipleResult');
+            const oneclickResultsList = document.getElementById('oneclickResultsList');
+            const oneclickSingleTitle = document.getElementById('oneclickSingleTitle');
+            const oneclickVocalsPreview = document.getElementById('oneclickVocalsPreview');
+            const oneclickInstrumentalPreview = document.getElementById('oneclickInstrumentalPreview');
+            
+            // 一键分离模式滑杆元素
+            const oneclickBatchSizeSlider = document.getElementById('oneclickBatchSizeSlider');
+            const oneclickBatchSizeValue = document.getElementById('oneclickBatchSizeValue');
+            const oneclickChunksSlider = document.getElementById('oneclickChunksSlider');
+            const oneclickChunksValue = document.getElementById('oneclickChunksValue');
+            const oneclickAggressivenessSlider = document.getElementById('oneclickAggressivenessSlider');
+            const oneclickAggressivenessValue = document.getElementById('oneclickAggressivenessValue');
+            
+            // 下载按钮
+            const downloadAllVocals = document.getElementById('downloadAllVocals');
+            const downloadAllInstrumentals = document.getElementById('downloadAllInstrumentals');
+            const oneclickDownloadAllVocals = document.getElementById('oneclickDownloadAllVocals');
+            const oneclickDownloadAllInstrumentals = document.getElementById('oneclickDownloadAllInstrumentals');
+            
+            // 存储上传的文件和处理结果
+            let uploadedFiles = [];
+            let processedResults = [];
+            
+            // 一键分离上传文件和处理结果
+            let oneclickUploadedFiles = [];
+            let oneclickProcessedResults = [];
+            
+            // 更新滑杆值显示 - 标准模式
+            batchSizeSlider.addEventListener('input', function() {
+                batchSizeValue.textContent = this.value;
+            });
+            
+            chunksSlider.addEventListener('input', function() {
+                chunksValue.textContent = this.value;
+            });
+            
+            aggressivenessSlider.addEventListener('input', function() {
+                aggressivenessValue.textContent = this.value;
+            });
+            
+            // 更新滑杆值显示 - 一键分离模式
+            oneclickBatchSizeSlider.addEventListener('input', function() {
+                oneclickBatchSizeValue.textContent = this.value;
+            });
+            
+            oneclickChunksSlider.addEventListener('input', function() {
+                oneclickChunksValue.textContent = this.value;
+            });
+            
+            oneclickAggressivenessSlider.addEventListener('input', function() {
+                oneclickAggressivenessValue.textContent = this.value;
+            });
+            
+            // 根据模型类型显示不同参数设置 - 标准模式
+            function updateParamsVisibility() {
+                const selectedModel = document.querySelector('input[name="model"]:checked').value;
                 
-                // 验证表单
-                if (!modelSelect.value) {
-                    showError('请选择模型');
-                    return;
+                if (selectedModel === '6_HP-Karaoke-UVR') {
+                    mdxParams.classList.add('hidden');
+                    vrParams.classList.remove('hidden');
+                } else {
+                    mdxParams.classList.remove('hidden');
+                    vrParams.classList.add('hidden');
                 }
-                if (!audioFile.files[0]) {
-                    showError('请选择音频文件');
-                    return;
+            }
+            
+            // 初始更新参数可见性
+            updateParamsVisibility();
+            
+            // 监听模型选择变化
+            modelRadios.forEach(radio => {
+                radio.addEventListener('change', updateParamsVisibility);
+            });
+            
+            // 文件拖放功能 - 通用函数
+            function setupDropArea(dropAreaElement, fileInputElement, fileListElement, fileArray, updateButtonState) {
+                // 防止默认行为
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropAreaElement.addEventListener(eventName, preventDefaults, false);
+                });
+                
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                 }
+                
+                // 添加拖动样式
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropAreaElement.addEventListener(eventName, () => {
+                        dropAreaElement.classList.add('active');
+                    });
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropAreaElement.addEventListener(eventName, () => {
+                        dropAreaElement.classList.remove('active');
+                    });
+                });
+                
+                // 处理文件拖放
+                dropAreaElement.addEventListener('drop', e => {
+                    const droppedFiles = e.dataTransfer.files;
+                    handleFiles(droppedFiles, fileArray, fileListElement, updateButtonState);
+                });
+                
+                // 点击选择文件
+                dropAreaElement.addEventListener('click', () => {
+                    fileInputElement.click();
+                });
+                
+                fileInputElement.addEventListener('change', () => {
+                    handleFiles(fileInputElement.files, fileArray, fileListElement, updateButtonState);
+                });
+            }
+            
+            // 处理文件添加
+            function handleFiles(files, fileArray, fileListElement, updateButtonState) {
+                const audioFiles = Array.from(files).filter(file => {
+                    return file.type.startsWith('audio/') || 
+                           file.name.endsWith('.mp3') || 
+                           file.name.endsWith('.wav') || 
+                           file.name.endsWith('.flac') || 
+                           file.name.endsWith('.m4a') || 
+                           file.name.endsWith('.ogg');
+                });
+                
+                if (audioFiles.length > 0) {
+                    addFilesToList(audioFiles, fileArray, fileListElement, updateButtonState);
+                } else {
+                    showError('请选择有效的音频文件', errorMessage);
+                }
+            }
+            
+            // 添加文件到列表
+            function addFilesToList(files, fileArray, fileListElement, updateButtonState) {
+                files.forEach(file => {
+                    // 检查文件是否已经添加
+                    if (!fileArray.some(f => f.name === file.name && f.size === file.size)) {
+                        fileArray.push(file);
+                        
+                        const fileItem = document.createElement('div');
+                        fileItem.className = 'file-item';
+                        
+                        const fileName = document.createElement('div');
+                        fileName.className = 'file-name';
+                        fileName.textContent = file.name;
+                        
+                        const removeButton = document.createElement('button');
+                        removeButton.className = 'file-remove';
+                        removeButton.innerHTML = '&times;';
+                        removeButton.addEventListener('click', () => {
+                            fileItem.remove();
+                            const index = fileArray.indexOf(file);
+                            if (index > -1) {
+                                fileArray.splice(index, 1);
+                            }
+                            updateButtonState();
+                        });
+                        
+                        fileItem.appendChild(fileName);
+                        fileItem.appendChild(removeButton);
+                        fileListElement.appendChild(fileItem);
+                    }
+                });
+                
+                updateButtonState();
+            }
+            
+            // 清理所有临时文件 - 复用函数
+            function setupCleanTempButton(buttonElement, fileArray, fileListElement, resultsArray, resetResultsFn, updateButtonStateFn) {
+                buttonElement.addEventListener('click', function() {
+                    // 直接清理，不显示确认弹窗
+                    fetch('/cleanup?dir_path=temp')
+                        .then(response => response.json())
+                        .then(data => {
+                            // 清理后重置上传文件列表和处理结果
+                            fileArray.length = 0;
+                            resultsArray.length = 0;
+                            fileListElement.innerHTML = '';
+                            resetResultsFn();
+                            updateButtonStateFn();
+                        })
+                        .catch(error => {
+                            showError('清理临时文件失败', errorMessage);
+                        });
+                });
+            }
+            
+            // 显示错误信息
+            function showError(message, errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+            
+            // 隐藏错误信息
+            function hideError(errorElement) {
+                errorElement.style.display = 'none';
+            }
+            
+            // 设置标准模式的拖放区域
+            setupDropArea(dropArea, fileInput, fileList, uploadedFiles, updateSeparateButtonState);
+            
+            // 设置一键分离模式的拖放区域
+            setupDropArea(oneclickDropArea, oneclickFileInput, oneclickFileList, oneclickUploadedFiles, updateOneclickSeparateButtonState);
+            
+            // 更新分离按钮状态 - 标准模式
+            function updateSeparateButtonState() {
+                separateButton.disabled = uploadedFiles.length === 0;
+            }
+            
+            // 更新分离按钮状态 - 一键分离模式
+            function updateOneclickSeparateButtonState() {
+                oneclickSeparateButton.disabled = oneclickUploadedFiles.length === 0;
+            }
+            
+            // 设置清理临时文件按钮 - 标准模式
+            setupCleanTempButton(cleanTempButton, uploadedFiles, fileList, processedResults, resetResults, updateSeparateButtonState);
+            
+            // 设置清理临时文件按钮 - 一键分离模式
+            setupCleanTempButton(oneclickCleanTempButton, oneclickUploadedFiles, oneclickFileList, oneclickProcessedResults, resetOneclickResults, updateOneclickSeparateButtonState);
+            
+            // 重置结果显示 - 标准模式
+            function resetResults() {
+                singleResult.style.display = 'none';
+                multipleResult.style.display = 'none';
+                resultsList.innerHTML = '';
+                if (vocalsPreview.querySelector('audio')) {
+                    vocalsPreview.querySelector('audio').src = '';
+                }
+                if (instrumentalPreview.querySelector('audio')) {
+                    instrumentalPreview.querySelector('audio').src = '';
+                }
+                hideError(errorMessage);
+            }
+            
+            // 重置结果显示 - 一键分离模式
+            function resetOneclickResults() {
+                oneclickSingleResult.style.display = 'none';
+                oneclickMultipleResult.style.display = 'none';
+                oneclickResultsList.innerHTML = '';
+                if (oneclickVocalsPreview.querySelector('audio')) {
+                    oneclickVocalsPreview.querySelector('audio').src = '';
+                }
+                if (oneclickInstrumentalPreview.querySelector('audio')) {
+                    oneclickInstrumentalPreview.querySelector('audio').src = '';
+                }
+                hideError(oneclickErrorMessage);
+            }
+            
+            // 标准分离模式的处理逻辑
+            separateButton.addEventListener('click', function() {
+                if (uploadedFiles.length === 0) return;
                 
                 // 重置界面
-                result.style.display = 'none';
-                resultLinks.innerHTML = '';
-                audioPlayers.innerHTML = '';
-                hideError();
+                resetResults();
+                hideError(errorMessage);
+                
+                // 获取选中的模型和参数
+                const selectedModel = document.querySelector('input[name="model"]:checked').value;
+                let params = {};
+                
+                if (selectedModel === '6_HP-Karaoke-UVR') {
+                    params = {
+                        aggressiveness: parseFloat(aggressivenessSlider.value)
+                    };
+                } else {
+                    params = {
+                        batch_size: parseInt(batchSizeSlider.value),
+                        chunks: parseInt(chunksSlider.value)
+                    };
+                }
                 
                 // 显示进度条
-                progressBar.style.display = 'block';
-                submitButton.disabled = true;
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                progressText.textContent = '正在处理...';
+                separateButton.disabled = true;
                 
-                // 创建表单数据
+                // 决定是单个处理还是批量处理
+                if (uploadedFiles.length === 1) {
+                    processSingleFile(uploadedFiles[0], selectedModel, params);
+                } else {
+                    processMultipleFiles(uploadedFiles, selectedModel, params);
+                }
+            });
+            
+            // 处理单个文件 - 标准模式
+            function processSingleFile(file, model, params) {
                 const formData = new FormData();
-                formData.append('file', audioFile.files[0]);
-                formData.append('model', modelSelect.value);
+                formData.append('file', file);
+                formData.append('model', model);
                 
-                // 发送请求
+                // 添加其他参数
+                for (const [key, value] of Object.entries(params)) {
+                    formData.append(key, value);
+                }
+                
                 fetch('/separate', {
                     method: 'POST',
                     body: formData
@@ -223,84 +948,522 @@
                     return response.json();
                 })
                 .then(data => {
-                    // 隐藏进度条
-                    progressBar.style.display = 'none';
-                    submitButton.disabled = false;
+                    // 更新进度
+                    progressBar.style.width = '100%';
+                    progressText.textContent = '处理完成';
                     
-                    // 显示结果
-                    result.style.display = 'block';
-                    tempDir = data.temp_dir;
+                    // 显示单个结果
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        singleResult.style.display = 'block';
+                        separateButton.disabled = false;
+                    }, 500);
                     
-                    // 添加下载链接和音频播放器
-                    if (data.files) {
-                        for (const [type, url] of Object.entries(data.files)) {
-                            // 创建下载链接
-                            const link = document.createElement('a');
-                            link.href = url;
-                            link.className = 'result-link';
-                            link.textContent = `下载${type === 'vocals' ? '人声' : '伴奏'}文件`;
-                            link.download = '';
-                            resultLinks.appendChild(link);
-                            
-                            // 创建音频播放器
-                            const audioTitle = document.createElement('p');
-                            audioTitle.textContent = type === 'vocals' ? '人声预览:' : '伴奏预览:';
-                            
-                            const audio = document.createElement('audio');
-                            audio.controls = true;
-                            audio.className = 'audio-player';
-                            audio.src = url;
-                            
-                            audioPlayers.appendChild(audioTitle);
-                            audioPlayers.appendChild(audio);
-                        }
-                    } else {
-                        resultLinks.innerHTML = '<p>处理完成，但没有生成文件</p>';
+                    // 设置文件标题
+                    singleTitle.textContent = file.name;
+                    
+                    // 设置音频预览和下载链接
+                    if (data.files && data.files.vocals) {
+                        vocalsPreview.querySelector('audio').src = data.files.vocals;
+                        vocalsPreview.querySelector('button').onclick = () => window.location.href = data.files.vocals;
                     }
+                    
+                    if (data.files && data.files.instrumental) {
+                        instrumentalPreview.querySelector('audio').src = data.files.instrumental;
+                        instrumentalPreview.querySelector('button').onclick = () => window.location.href = data.files.instrumental;
+                    }
+                    
+                    // 保存处理结果
+                    processedResults = [{
+                        filename: file.name,
+                        model: model,
+                        files: data.files,
+                        temp_dir: data.temp_dir
+                    }];
                 })
                 .catch(error => {
-                    progressBar.style.display = 'none';
-                    submitButton.disabled = false;
-                    showError(error.message);
+                    progressContainer.style.display = 'none';
+                    separateButton.disabled = false;
+                    showError(error.message, errorMessage);
                 });
+            }
+            
+            // 处理多个文件 - 标准模式
+            function processMultipleFiles(files, model, params) {
+                const totalFiles = files.length;
+                let processedCount = 0;
+                processedResults = [];
+                
+                function processNextFile(index) {
+                    if (index >= totalFiles) {
+                        // 所有文件处理完成
+                        setTimeout(() => {
+                            progressContainer.style.display = 'none';
+                            multipleResult.style.display = 'block';
+                            separateButton.disabled = false;
+                        }, 500);
+                        return;
+                    }
+                    
+                    const file = files[index];
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('model', model);
+                    
+                    // 添加其他参数
+                    for (const [key, value] of Object.entries(params)) {
+                        formData.append(key, value);
+                    }
+                    
+                    // 更新进度
+                    const progress = (index / totalFiles) * 100;
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `处理中 ${index+1}/${totalFiles}: ${file.name}`;
+                    
+                    fetch('/separate', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(`处理 ${file.name} 失败: ${data.detail || '未知错误'}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        processedCount++;
+                        
+                        // 保存处理结果
+                        processedResults.push({
+                            filename: file.name,
+                            model: model,
+                            files: data.files,
+                            temp_dir: data.temp_dir
+                        });
+                        
+                        // 添加到结果列表
+                        addToResultsList(file.name, data.files, resultsList);
+                        
+                        // 处理下一个文件
+                        processNextFile(index + 1);
+                    })
+                    .catch(error => {
+                        showError(error.message, errorMessage);
+                        
+                        // 继续处理下一个文件
+                        processNextFile(index + 1);
+                    });
+                }
+                
+                // 开始处理第一个文件
+                processNextFile(0);
+            }
+            
+            // 添加到批处理结果列表 - 通用方法
+            function addToResultsList(filename, files, resultsListElement) {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'single-result';
+                
+                const resultTitle = document.createElement('div');
+                resultTitle.className = 'result-title';
+                resultTitle.textContent = filename;
+                
+                const audioContainer = document.createElement('div');
+                audioContainer.className = 'audio-container';
+                
+                // 创建人声和伴奏区域
+                if (files && files.vocals) {
+                    const vocalsPreview = document.createElement('div');
+                    vocalsPreview.className = 'audio-preview';
+                    
+                    const vocalsLabel = document.createElement('label');
+                    vocalsLabel.textContent = '人声:';
+                    
+                    const downloadVocals = document.createElement('button');
+                    downloadVocals.className = 'download-button';
+                    downloadVocals.textContent = '下载人声';
+                    downloadVocals.onclick = () => {
+                        const a = document.createElement('a');
+                        a.href = files.vocals;
+                        a.download = '';
+                        a.click();
+                    };
+                    
+                    vocalsPreview.appendChild(vocalsLabel);
+                    vocalsPreview.appendChild(downloadVocals);
+                    audioContainer.appendChild(vocalsPreview);
+                }
+                
+                if (files && files.instrumental) {
+                    const instrumentalPreview = document.createElement('div');
+                    instrumentalPreview.className = 'audio-preview';
+                    
+                    const instrumentalLabel = document.createElement('label');
+                    instrumentalLabel.textContent = '伴奏:';
+                    
+                    const downloadInstrumental = document.createElement('button');
+                    downloadInstrumental.className = 'download-button';
+                    downloadInstrumental.textContent = '下载伴奏';
+                    downloadInstrumental.onclick = () => {
+                        const a = document.createElement('a');
+                        a.href = files.instrumental;
+                        a.download = '';
+                        a.click();
+                    };
+                    
+                    instrumentalPreview.appendChild(instrumentalLabel);
+                    instrumentalPreview.appendChild(downloadInstrumental);
+                    audioContainer.appendChild(instrumentalPreview);
+                }
+                
+                resultItem.appendChild(resultTitle);
+                resultItem.appendChild(audioContainer);
+                resultsListElement.appendChild(resultItem);
+            }
+            
+            // 下载所有人声 - 标准模式
+            downloadAllVocals.addEventListener('click', function() {
+                downloadAllFiles(processedResults, 'vocals');
             });
             
-            // 清理临时文件
-            cleanupButton.addEventListener('click', function() {
-                if (tempDir) {
-                    fetch(`/cleanup?dir_path=${encodeURIComponent(tempDir)}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            result.style.display = 'none';
-                            tempDir = null;
-                        })
-                        .catch(error => {
-                            showError('清理临时文件失败');
-                        });
+            // 下载所有伴奏 - 标准模式
+            downloadAllInstrumentals.addEventListener('click', function() {
+                downloadAllFiles(processedResults, 'instrumental');
+            });
+            
+            // 下载所有人声 - 一键分离模式
+            oneclickDownloadAllVocals.addEventListener('click', function() {
+                downloadAllFiles(oneclickProcessedResults, 'vocals');
+            });
+            
+            // 下载所有伴奏 - 一键分离模式
+            oneclickDownloadAllInstrumentals.addEventListener('click', function() {
+                downloadAllFiles(oneclickProcessedResults, 'instrumental');
+            });
+            
+            // 下载所有文件 - 通用方法
+            function downloadAllFiles(results, type) {
+                if (results.length === 0) return;
+                
+                // 为每个结果创建下载
+                results.forEach((result, index) => {
+                    if (result.files && result.files[type]) {
+                        // 使用setTimeout错开下载，避免浏览器限制
+                        setTimeout(() => {
+                            const a = document.createElement('a');
+                            a.href = result.files[type];
+                            a.download = '';
+                            a.target = '_blank';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        }, index * 500); // 每个下载间隔500毫秒
+                    }
+                });
+            }
+
+            // 一键分离模式处理逻辑
+            oneclickSeparateButton.addEventListener('click', function() {
+                if (oneclickUploadedFiles.length === 0) return;
+                
+                // 重置界面
+                resetOneclickResults();
+                hideError(oneclickErrorMessage);
+                
+                // 显示进度条
+                oneclickProgressContainer.style.display = 'block';
+                oneclickProgressBar.style.width = '0%';
+                oneclickProgressText.textContent = '正在处理...';
+                oneclickSeparateButton.disabled = true;
+                
+                // 获取MDX和VR模型参数
+                const mdxParams = {
+                    batch_size: parseInt(oneclickBatchSizeSlider.value),
+                    chunks: parseInt(oneclickChunksSlider.value)
+                };
+                
+                const vrParams = {
+                    aggressiveness: parseFloat(oneclickAggressivenessSlider.value)
+                };
+                
+                // 决定是单个处理还是批量处理
+                if (oneclickUploadedFiles.length === 1) {
+                    processOneclickSingleFile(oneclickUploadedFiles[0], mdxParams, vrParams);
+                } else {
+                    processOneclickMultipleFiles(oneclickUploadedFiles, mdxParams, vrParams);
                 }
             });
             
-            // 清除模型缓存
-            clearCacheButton.addEventListener('click', function() {
-                fetch('/clear_cache')
-                    .then(response => response.json())
-                    .then(data => {
-                        alert(data.message);
+            // 处理单个文件 - 一键分离模式
+            function processOneclickSingleFile(file, mdxParams, vrParams) {
+                // 获取纯文件名（不含扩展名）
+                const originalName = file.name.substring(0, file.name.lastIndexOf('.'));
+                
+                oneclickProgressText.textContent = `步骤1/4: 使用Kim_Vocal_2模型初次分离 ${file.name}`;
+                oneclickProgressBar.style.width = '10%';
+                
+                // 步骤1: 使用Kim_Vocal_2模型进行首次分离
+                processSingleFileWithModel(file, 'Kim_Vocal_2', mdxParams)
+                    .then(step1Result => {
+                        oneclickProgressText.textContent = `步骤2/4: 使用6_HP-Karaoke-UVR模型二次分离人声`;
+                        oneclickProgressBar.style.width = '35%';
+                        
+                        // 获取步骤1的结果文件 (人声A)
+                        const vocalsA = step1Result.files.vocals;
+                        const instrumentalA = step1Result.files.instrumental;
+                        
+                        // 步骤2: 将人声A发送给6_HP-Karaoke-UVR模型进行二次分离
+                        return processFileUrlWithModel(vocalsA, '6_HP-Karaoke-UVR', vrParams, `${originalName}-伴奏`)
+                            .then(step2Result => {
+                                oneclickProgressText.textContent = `步骤3/4: 混合伴奏`;
+                                oneclickProgressBar.style.width = '65%';
+                                
+                                // 获取步骤2的结果文件 (人声B和伴奏B)
+                                const vocalsB = step2Result.files.vocals;
+                                const instrumentalB = step2Result.files.instrumental;
+                                
+                                // 步骤3: 混合伴奏A和伴奏B (通过另一个API调用) - 使用自定义文件名
+                                return mixInstrumentals(instrumentalA, instrumentalB, `${originalName}-人声`)
+                                    .then(mixedInstrumental => {
+                                        oneclickProgressText.textContent = `步骤4/4: 使用Reverb_HQ_By_FoxJoy处理人声`;
+                                        oneclickProgressBar.style.width = '85%';
+                                        
+                                        // 步骤4: 将人声B发送给Reverb_HQ_By_FoxJoy模型处理 - 使用自定义文件名
+                                        return processFileUrlWithModel(vocalsB, 'Reverb_HQ_By_FoxJoy', mdxParams, `${originalName}-人声`)
+                                            .then(step4Result => {
+                                                oneclickProgressBar.style.width = '100%';
+                                                oneclickProgressText.textContent = '处理完成';
+                                                
+                                                // 获取最终的人声C (不带混响)
+                                                const finalVocal = step4Result.files.vocals;
+                                                const finalInstrumental = mixedInstrumental;
+                                                
+                                                // 显示结果
+                                                setTimeout(() => {
+                                                    oneclickProgressContainer.style.display = 'none';
+                                                    oneclickSingleResult.style.display = 'block';
+                                                    oneclickSeparateButton.disabled = false;
+                                                }, 500);
+                                                
+                                                // 设置文件标题
+                                                oneclickSingleTitle.textContent = file.name;
+                                                
+                                                // 设置音频预览和下载链接
+                                                oneclickVocalsPreview.querySelector('audio').src = finalVocal;
+                                                oneclickVocalsPreview.querySelector('button').onclick = () => window.location.href = finalVocal;
+                                                
+                                                oneclickInstrumentalPreview.querySelector('audio').src = finalInstrumental;
+                                                oneclickInstrumentalPreview.querySelector('button').onclick = () => window.location.href = finalInstrumental;
+                                                
+                                                // 保存处理结果
+                                                oneclickProcessedResults = [{
+                                                    filename: file.name,
+                                                    files: {
+                                                        vocals: finalVocal,
+                                                        instrumental: finalInstrumental
+                                                    }
+                                                }];
+                                            });
+                                    });
+                            });
                     })
                     .catch(error => {
-                        showError('清除模型缓存失败');
+                        oneclickProgressContainer.style.display = 'none';
+                        oneclickSeparateButton.disabled = false;
+                        showError(`处理失败: ${error.message}`, oneclickErrorMessage);
                     });
-            });
-            
-            // 显示错误信息
-            function showError(message) {
-                errorMessage.textContent = message;
-                errorMessage.style.display = 'block';
             }
             
-            // 隐藏错误信息
-            function hideError() {
-                errorMessage.style.display = 'none';
+            // 处理多个文件 - 一键分离模式
+            function processOneclickMultipleFiles(files, mdxParams, vrParams) {
+                const totalFiles = files.length;
+                oneclickProcessedResults = [];
+                
+                function processNextFile(index) {
+                    if (index >= totalFiles) {
+                        // 所有文件处理完成
+                        setTimeout(() => {
+                            oneclickProgressContainer.style.display = 'none';
+                            oneclickMultipleResult.style.display = 'block';
+                            oneclickSeparateButton.disabled = false;
+                        }, 500);
+                        return;
+                    }
+                    
+                    const file = files[index];
+                    const fileProgress = index / totalFiles * 100;
+                    // 获取纯文件名（不含扩展名）
+                    const originalName = file.name.substring(0, file.name.lastIndexOf('.'));
+                    
+                    oneclickProgressBar.style.width = `${fileProgress}%`;
+                    oneclickProgressText.textContent = `处理中 ${index+1}/${totalFiles}: ${file.name}`;
+                    
+                    // 执行一键分离的四步处理
+                    processSingleFileWithModel(file, 'Kim_Vocal_2', mdxParams)
+                        .then(step1Result => {
+                            const vocalsA = step1Result.files.vocals;
+                            const instrumentalA = step1Result.files.instrumental;
+                            
+                            return processFileUrlWithModel(vocalsA, '6_HP-Karaoke-UVR', vrParams, `${originalName}-伴奏`)
+                                .then(step2Result => {
+                                    const vocalsB = step2Result.files.vocals;
+                                    const instrumentalB = step2Result.files.instrumental;
+                                    
+                                    return mixInstrumentals(instrumentalA, instrumentalB, `${originalName}-人声`)
+                                        .then(mixedInstrumental => {
+                                            return processFileUrlWithModel(vocalsB, 'Reverb_HQ_By_FoxJoy', mdxParams, `${originalName}-人声`)
+                                                .then(step4Result => {
+                                                    const finalVocal = step4Result.files.vocals;
+                                                    const finalInstrumental = mixedInstrumental;
+                                                    
+                                                    // 将处理结果添加到列表
+                                                    const resultData = {
+                                                        filename: file.name,
+                                                        files: {
+                                                            vocals: finalVocal,
+                                                            instrumental: finalInstrumental
+                                                        }
+                                                    };
+                                                    
+                                                    oneclickProcessedResults.push(resultData);
+                                                    addToResultsList(file.name, resultData.files, oneclickResultsList);
+                                                    
+                                                    // 处理下一个文件
+                                                    processNextFile(index + 1);
+                                                });
+                                        });
+                                });
+                        })
+                        .catch(error => {
+                            showError(`处理 ${file.name} 失败: ${error.message}`, oneclickErrorMessage);
+                            // 继续处理下一个文件
+                            processNextFile(index + 1);
+                        });
+                }
+                
+                // 开始处理第一个文件
+                processNextFile(0);
+            }
+            
+            // 使用指定模型处理单个文件 - 返回Promise
+            function processSingleFileWithModel(file, model, params) {
+                return new Promise((resolve, reject) => {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('model', model);
+                    
+                    // 添加其他参数
+                    for (const [key, value] of Object.entries(params)) {
+                        formData.append(key, value);
+                    }
+                    
+                    fetch('/separate', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.detail || `使用模型 ${model} 处理失败`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(resolve)
+                    .catch(reject);
+                });
+            }
+            
+            // 使用指定模型处理文件URL - 返回Promise
+            function processFileUrlWithModel(fileUrl, model, params, customName = null) {
+                return new Promise((resolve, reject) => {
+                    // 从文件URL中提取文件路径
+                    const filePath = fileUrl.split('?path=')[1];
+                    
+                    if (!filePath) {
+                        reject(new Error('无效的文件URL'));
+                        return;
+                    }
+                    
+                    // 构建formData
+                    const formData = new FormData();
+                    formData.append('file_path', filePath);
+                    formData.append('model', model);
+                    
+                    // 添加自定义文件名（如果提供）
+                    if (customName) {
+                        formData.append('custom_name', customName);
+                    }
+                    
+                    // 添加其他参数
+                    for (const [key, value] of Object.entries(params)) {
+                        formData.append(key, value);
+                    }
+                    
+                    // 调用API
+                    fetch('/separate_from_path', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.detail || `使用模型 ${model} 处理失败`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(resolve)
+                    .catch(reject);
+                });
+            }
+            
+            // 混合两个伴奏 - 返回Promise
+            function mixInstrumentals(instrumental1, instrumental2, customName = null) {
+                return new Promise((resolve, reject) => {
+                    // 从文件URL中提取文件路径
+                    const path1 = instrumental1.split('?path=')[1];
+                    const path2 = instrumental2.split('?path=')[1];
+                    
+                    if (!path1 || !path2) {
+                        reject(new Error('无效的文件URL'));
+                        return;
+                    }
+                    
+                    // 构建formData
+                    const formData = new FormData();
+                    formData.append('file_path1', path1);
+                    formData.append('file_path2', path2);
+                    
+                    // 添加自定义文件名（如果提供）
+                    if (customName) {
+                        formData.append('custom_name', customName);
+                    }
+                    
+                    // 调用API来混合两个伴奏
+                    fetch('/mix_audio', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.detail || '混合伴奏失败');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.mixed_file) {
+                            resolve(data.mixed_file);
+                        } else {
+                            reject(new Error('混合结果中没有文件路径'));
+                        }
+                    })
+                    .catch(reject);
+                });
             }
         });
     </script>

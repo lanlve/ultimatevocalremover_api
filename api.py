@@ -43,7 +43,7 @@ app.add_middleware(
 
 # 临时文件夹路径
 TEMP_DIR = Path("./temp")
-TEMP_DIR.mkdir(exist_ok=True)
+TEMP_DIR.mkdir(exist_ok=True, parents=True)  # 确保temp目录存在
 
 # 模型目录路径，改为使用models_dir
 MODELS_BASE_DIR = Path("./src/models_dir")
@@ -1131,9 +1131,21 @@ async def download_file(path: str):
 @app.get("/cleanup")
 async def cleanup_temp_files(dir_path: str):
     """清理临时文件"""
-    if os.path.exists(dir_path) and dir_path.startswith(str(TEMP_DIR)):
-        shutil.rmtree(dir_path, ignore_errors=True)
-        return {"status": "success", "message": "临时文件已清理"}
+    # 检查路径是否是temp文件夹或其子文件夹
+    if dir_path == "temp" or (dir_path.startswith(str(TEMP_DIR)) and os.path.exists(dir_path)):
+        # 如果是temp根目录，清空内容但不删除目录本身
+        if dir_path == "temp":
+            for item in os.listdir(TEMP_DIR):
+                item_path = os.path.join(TEMP_DIR, item)
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+                elif os.path.isfile(item_path):
+                    os.remove(item_path)
+            return {"status": "success", "message": "临时文件已清理，保留temp目录"}
+        else:
+            # 如果是子目录，则可以整个删除
+            shutil.rmtree(dir_path, ignore_errors=True)
+            return {"status": "success", "message": "临时文件已清理"}
     else:
         raise HTTPException(status_code=400, detail="无效的目录路径")
 
@@ -1161,6 +1173,210 @@ def rename_audio_res_dict(audio_res:dict, names:dict)->dict:
         standard_audio_res[standard_key] = v
         
     return standard_audio_res
+
+@app.post("/separate_from_path")
+async def separate_audio_from_path(
+    file_path: str = Form(...),
+    model: str = Form(...),
+    batch_size: Optional[int] = Form(None),
+    chunks: Optional[int] = Form(None),
+    aggressiveness: Optional[float] = Form(None),
+    custom_name: Optional[str] = Form(None)  # 添加自定义文件名参数
+):
+    """从文件路径分离音频文件"""
+    # 检查模型是否支持
+    if model not in MODEL_CONFIGS:
+        raise HTTPException(status_code=400, detail=f"不支持的模型: {model}")
+    
+    # 检查文件是否存在
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail=f"文件不存在: {file_path}")
+    
+    # 创建临时目录存储结果文件
+    temp_dir = tempfile.mkdtemp(dir=TEMP_DIR)
+    temp_path = Path(temp_dir)
+    
+    try:
+        # 获取输入文件名
+        input_filename = os.path.basename(file_path)
+        
+        # 创建输出文件名
+        if custom_name:
+            output_path = temp_path / f"{custom_name}.wav"
+        else:
+            output_base = os.path.splitext(input_filename)[0]
+            output_path = temp_path / f"{output_base}_output.wav"
+        
+        # 根据模型类型设置参数
+        model_config = MODEL_CONFIGS.get(model)
+        params = model_config["parameters"].copy()
+        
+        # 更新参数（如果提供）
+        if model_config["type"] == "mdx":
+            if batch_size is not None:
+                params["batch_size"] = batch_size
+            if chunks is not None:
+                params["chunks"] = chunks
+        elif model_config["type"] == "vr_network":
+            if aggressiveness is not None:
+                params["aggressiveness"] = aggressiveness
+        
+        # 处理音频
+        print(f"开始处理音频文件: {file_path}, 使用模型: {model}, 输出路径: {output_path}")
+        result = process_audio(str(file_path), model, str(output_path))
+        print(f"音频处理完成, 结果: {result}")
+        
+        # 如果指定了自定义名称，重命名结果文件
+        output_files = {}
+        
+        if custom_name and "Vocals" in result and "Instrumental" in result:
+            # 获取原始文件路径
+            original_vocals_path = result["Vocals"]
+            original_instrumental_path = result["Instrumental"]
+            
+            # 根据模型类型决定如何命名文件
+            vocals_suffix = ""
+            instrumental_suffix = ""
+            
+            if model == "Reverb_HQ_By_FoxJoy" or model_config.get("parameters", {}).get("is_reverb_model", False):
+                vocals_suffix = ".wav"
+                instrumental_suffix = ".wav"
+            else:
+                vocals_suffix = "_Vocals.wav" if not "Vocals.wav" in original_vocals_path else ".wav"
+                instrumental_suffix = "_Instrumental.wav" if not "Instrumental.wav" in original_instrumental_path else ".wav"
+            
+            # 创建新文件路径
+            vocals_path = temp_path / f"{custom_name}{vocals_suffix}"
+            instrumental_path = temp_path / f"{custom_name}{instrumental_suffix}"
+            
+            # 复制文件到新路径
+            try:
+                shutil.copy(original_vocals_path, vocals_path)
+                shutil.copy(original_instrumental_path, instrumental_path)
+                
+                # 更新结果路径
+                output_files["vocals"] = f"/download?path={vocals_path}"
+                output_files["instrumental"] = f"/download?path={instrumental_path}"
+            except Exception as e:
+                print(f"重命名文件时出错: {str(e)}")
+                # 如果重命名失败，使用原始文件路径
+                output_files["vocals"] = f"/download?path={original_vocals_path}"
+                output_files["instrumental"] = f"/download?path={original_instrumental_path}"
+        else:
+            # 检查结果中的各种可能的键值
+            # VR和MDX模型输出结构可能不同
+            if "Vocals" in result:
+                vocal_path = result["Vocals"]
+                output_files["vocals"] = f"/download?path={vocal_path}"
+            
+            if "Instrumental" in result:
+                inst_path = result["Instrumental"]
+                output_files["instrumental"] = f"/download?path={inst_path}"
+        
+        return {
+            "model": model,
+            "original_filename": input_filename,
+            "files": output_files,
+            "temp_dir": str(temp_path)
+        }
+        
+    except Exception as e:
+        # 删除临时目录
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        import traceback
+        raise HTTPException(status_code=500, detail=f"处理音频失败: {str(e)}\n{traceback.format_exc()}")
+
+@app.post("/mix_audio")
+async def mix_audio_files(
+    file_path1: str = Form(...),
+    file_path2: str = Form(...),
+    mix_ratio: float = Form(0.5),  # 默认混合比例为0.5
+    custom_name: Optional[str] = Form(None)  # 可选的自定义文件名
+):
+    """混合两个音频文件"""
+    # 检查文件是否存在
+    if not os.path.exists(file_path1):
+        raise HTTPException(status_code=404, detail=f"文件1不存在: {file_path1}")
+    
+    if not os.path.exists(file_path2):
+        raise HTTPException(status_code=404, detail=f"文件2不存在: {file_path2}")
+    
+    # 创建临时目录存储结果文件
+    temp_dir = tempfile.mkdtemp(dir=TEMP_DIR)
+    temp_path = Path(temp_dir)
+    
+    try:
+        # 获取输入文件名
+        input_filename1 = os.path.basename(file_path1)
+        original_name = os.path.splitext(input_filename1)[0]
+        
+        # 如果路径中包含多层目录结构，提取原始文件名
+        if "_output_" in original_name:
+            original_name = original_name.split("_output_")[0]
+        
+        # 创建输出文件名
+        if custom_name:
+            output_filename = f"{custom_name}.wav"
+        else:
+            output_filename = f"{original_name}-伴奏.wav"
+        
+        output_path = temp_path / output_filename
+        
+        # 加载两个音频文件
+        print(f"加载音频文件1: {file_path1}")
+        audio1, sr1 = librosa.load(file_path1, sr=None, mono=False)
+        
+        print(f"加载音频文件2: {file_path2}")
+        audio2, sr2 = librosa.load(file_path2, sr=None, mono=False)
+        
+        # 确保采样率相同
+        if sr1 != sr2:
+            print(f"采样率不同，将文件2重采样到{sr1}Hz")
+            audio2 = librosa.resample(audio2, orig_sr=sr2, target_sr=sr1)
+        
+        # 处理音频数组形状
+        if audio1.ndim == 1:
+            audio1 = np.expand_dims(audio1, axis=0)
+        if audio2.ndim == 1:
+            audio2 = np.expand_dims(audio2, axis=0)
+        
+        # 调整音频长度为较短的一个
+        min_length = min(audio1.shape[1], audio2.shape[1])
+        audio1 = audio1[:, :min_length]
+        audio2 = audio2[:, :min_length]
+        
+        # 混合音频
+        print(f"混合音频文件，比例: {mix_ratio}")
+        mixed_audio = audio1 * mix_ratio + audio2 * (1.0 - mix_ratio)
+        
+        # 归一化
+        max_val = np.max(np.abs(mixed_audio))
+        if max_val > 0:
+            mixed_audio = mixed_audio / max_val * 0.9  # 防止音频过大产生剪切
+        
+        # 检查音频形状
+        print(f"混合音频形状: {mixed_audio.shape}, 数据类型: {mixed_audio.dtype}")
+        
+        # 如果是多通道，需要转置为(n_samples, n_channels)格式
+        if mixed_audio.ndim > 1 and mixed_audio.shape[0] == 2:
+            print("转置音频数据为(n_samples, n_channels)格式")
+            mixed_audio = mixed_audio.T
+        
+        # 保存混合后的音频 - 显式指定格式为WAV
+        print(f"保存混合后的音频到: {output_path}")
+        sf.write(str(output_path), mixed_audio, sr1, format='WAV', subtype='PCM_16')
+        
+        # 返回混合后文件的相对路径
+        return {
+            "mixed_file": f"/download?path={output_path}",
+            "temp_dir": str(temp_path)
+        }
+        
+    except Exception as e:
+        # 删除临时目录
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        import traceback
+        raise HTTPException(status_code=500, detail=f"混合音频失败: {str(e)}\n{traceback.format_exc()}")
 
 def main():
     parser = argparse.ArgumentParser(description="Ultimate Vocal Remover API")
